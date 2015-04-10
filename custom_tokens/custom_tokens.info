@@ -1,0 +1,3 @@
+name = Custom Tokens
+description = Module to generate custom tokens.
+core = 7.x

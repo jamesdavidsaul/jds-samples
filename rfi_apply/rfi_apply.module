@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * Implements hook_help.
+ *
+ * Displays help and module information.
+ *
+ * @param path 
+ *   Which path of the site we're using to display help
+ * @param arg 
+ *   Array that holds the current path as returned from arg() function
+ */
+function rfi_apply_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#rfi_apply":
+      return '<p>' . t("Dynamic deadline blocks") . '</p>';
+      break;
+  }
+} 
+
+/**
+ * Implements hook_block_info(). Creates each redirect block.
+ */
+function rfi_apply_block_info() {
+  
+  $blocks['mobile_apply_block'] = array(
+    // The name that will appear in the block list.
+    'info' => t('Mobile Apply Button'),
+    // Default setting.
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+  
+  $blocks['rfi_block'] = array(
+    // The name that will appear in the block list.
+    'info' => t('RFI Button'),
+    // Default setting.
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+  
+  $blocks['speak_pd_block'] = array(
+    // The name that will appear in the block list.
+    'info' => t('Speak with the PD button'),
+    // Default setting.
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+
+  return $blocks;
+}
+
+function rfi_apply_theme() {
+  return array(
+   'mobile_apply' => array (
+      'variables' => array('title' => NULL, 'path' => NULL), // eg: if you want $title, $path in ur tpl. you can use any variable or an entire array/object.
+      'template' => 'mobile-apply',
+    ),
+    'rfi' => array (
+      'variables' => array('title' => NULL, 'path' => NULL), // eg: if you want $title, $path in ur tpl. you can use any variable or an entire array/object.
+      'template' => 'rfi-block',
+    ),
+    'speak_pd' => array (
+      'variables' => array('title' => NULL, 'path' => NULL), // eg: if you want $title, $path in ur tpl. you can use any variable or an entire array/object.
+      'template' => 'speak-pd',
+    )
+  );
+}
+
+function rfi_apply_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+      case 'mobile_apply_block':
+      $block = array(
+        'content' => theme('mobile_apply', array('title' => $title, 'path' => $path)),
+      );
+      break;
+      
+      case 'rfi_block':
+      $block = array(
+        'content' => theme('rfi', array('title' => $title, 'path' => $path)),
+      );
+      break;
+      
+      case 'speak_pd_block':
+      $block = array(
+        'content' => theme('speak_pd', array('title' => $title, 'path' => $path)),
+      );
+  }
+  return $block;
+}
