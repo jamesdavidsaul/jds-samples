@@ -1,103 +1,142 @@
 <?php
+/**
+ * @file
+ * Module that creates custom tokens for path aliasing.
+ */
 
 /**
- * Implements hook_help.
+ * Implements hook_help().
  *
  * Displays help and module information.
- *
- * @param path 
- *   Which path of the site we're using to display help
- * @param arg 
- *   Array that holds the current path as returned from arg() function
  */
 function custom_tokens_help($path, $arg) {
   switch ($path) {
     case "admin/help#custom_tokens":
       return '<p>' . t("Custom tokens") . '</p>';
-      break;
   }
 }
 
+/**
+ * Implements hook_block_info().
+ *
+ * Displays info for each custom token.
+ */
 function custom_tokens_token_info() {
   $info['tokens']['node']['clean-program-url'] = array(
     'name' => t('Program URL (Clean)'),
     'description' => t('A cleaned up Program URL that only takes the first term for aliasing.'),
   );
-   $info['tokens']['node']['clean-news-program-url'] = array(
+  $info['tokens']['node']['clean-news-program-url'] = array(
     'name' => t('Program URL (Clean News)'),
     'description' => t('A cleaned up Program URL for news and profiles that only takes the first term for aliasing.'),
   );
-   $info['tokens']['node']['hsp-course-url'] = array(
+  $info['tokens']['node']['clean-faculty-program-url'] = array(
+    'name' => t('Program URL (Clean Faculty)'),
+    'description' => t('A cleaned up Program URL for faculty that considers hubs/changing URL structures.'),
+  );
+  $info['tokens']['node']['hsp-course-url'] = array(
     'name' => t('HSP Course URL'),
     'description' => t('A URL for HSP Courses that considers jr/sr.'),
   );
   return $info;
 }
 
+/**
+ * Implements hook_tokens().
+ *
+ * Creates each custom token.
+ */
 function custom_tokens_tokens($type, $tokens, array $data = array(), array $options = array()) {
   $replacements = array();
   $sanitize = !empty($options['sanitize']);
- 
+
   // Check for 'user' token type.
   if ($type == 'node' && !empty($data['node'])) {
-  	$node = $data['node'];
+    $node = $data['node'];
     foreach ($tokens as $name => $original) {
       switch ($name) {
         // Define replacement for the token.
         case 'clean-program-url':
-     	$tid = $node->taxonomy_vocabulary_7['und'][0]['tid'];
-      $term = taxonomy_term_load($tid);
-      	if (strpos($term->name, 'certificate')) {
-		 $value = '/certificates/'.$term->name;
-		 } else {
-		 $value = $term->name;
-		 }
+          $tid = $node->taxonomy_vocabulary_7['und'][0]['tid'];
+          $term = taxonomy_term_load($tid);
+          if (strpos($term->name, 'certificate')) {
+            $value = '/certificates/' . $term->name;
+          }
+          else {
+            $value = $term->name;
+          }
           $replacements[$original] = $value;
           break;
+
         case 'clean-news-program-url':
-     	$tid = $node->taxonomy_vocabulary_7['und'][0]['tid'];
-	 	$term = taxonomy_term_load($tid);
-	 	
-	 	if ($node->sticky == '1') {
-		 	if (strpos($term->name, 'certificate')) {
-		 $value = '/certificates/'.$term->name.'/profiles';
-		 } else {
-		 $value = $term->name.'/profiles';
+          $tid = $node->taxonomy_vocabulary_7['und'][0]['tid'];
+          $term = taxonomy_term_load($tid);
+          if ($node->sticky == '1') {
+            if (strpos($term->name, 'certificate')) {
+              $value = '/certificates/' . $term->name . '/profiles';
+            }
+            else {
+              $value = $term->name . '/profiles';
+            }
+          }
+          else {
 
-		 }
-
-	 	} else {
-		 	
-		 	if (strpos($term->name, 'certificate')) {
-		 $value = '/certificates/'.$term->name.'/news';
-	 	} else {
-			if (preg_match("[business-edge|business-practice]",$term->name)) {
-		 	
-		 	$value = '/summer/'.$term->name.'/news';
-		} else {
-		 	$value = $term->name.'/news';
-
-	 	}
-	 	}
-        }
-         
-         $replacements[$original] = $value;
-         break;
-		 
-		 case 'hsp-course-url':
-     	$level = $node->field_hsp_course_level['und'][0]['value'];
-
-	 	if (strpos($level, 'freshman')) {
-		 	$value = '/junior-senior-courses';
-	 	} else {
-		 	$value = '/freshman-sophomore-courses';
-	 	}
+            if (strpos($term->name, 'certificate')) {
+              $value = '/certificates/' . $term->name . '/news';
+            }
+            else {
+              if (preg_match("[business-edge|business-practice]", $term->name)) {
+                $value = '/summer/' . $term->name . '/news';
+              }
+              else {
+                if ($node->taxonomy_vocabulary_7['und'][2]['tid']) {
+                  $value = '/news';
+                }
+                else {
+                  $value = $term->name . '/news';
+                }
+              }
+            }
+          }
           $replacements[$original] = $value;
           break;
 
+        case 'clean-faculty-program-url':
+          $tid = $node->taxonomy_vocabulary_7['und'][0]['tid'];
+          $term = taxonomy_term_load($tid);
+          $program = $term->name;
+          $programtype = $term->field_program_type['und'][0]['value'];
+          $hubtid = $node->field_hub_program['und'][0]['tid'];
+          $hubterm = taxonomy_term_load($hubtid);
+          $hubprogram = $hubterm->name;
+
+          if ($hubterm) {
+            $value = '/' . $program . '/' . $hubprogram . '/faculty';
+          }
+          else {
+            if (strpos($term->name, 'certificate')) {
+              $value = '/certificates/' . $program . '/faculty';
+            }
+            else {
+              $value = '/' . $program . '/faculty';
+            }
+          }
+          $replacements[$original] = $value;
+          break;
+
+        case 'hsp-course-url':
+          $level = $node->field_hsp_course_level['und'][0]['value'];
+
+          if (strpos($level, 'freshman')) {
+            $value = '/junior-senior-courses';
+          }
+          else {
+            $value = '/freshman-sophomore-courses';
+          }
+          $replacements[$original] = $value;
+          break;
       }
     }
   }
- 
   return $replacements;
 }
